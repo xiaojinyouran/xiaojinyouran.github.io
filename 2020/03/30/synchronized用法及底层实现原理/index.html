@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+  <meta charset="utf-8">
+  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-transform" />
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=no,email=no,adress=no">
+  <!-- Color theme for statusbar -->
+  <meta name="theme-color" content="#000000" />
+  <!-- 强制页面在当前窗口以独立页面显示,防止别人在框架里调用页面 -->
+  <meta http-equiv="window-target" content="_top" />
+  
+  
+  <title>synchronized用法及底层实现原理 | Hexo</title>
+  <meta name="description" content="synchronized使用方法一、 静态方法由于静态方式是属于类而不是对象的，所以使用synchronized修饰静态方法是锁定这个类的所有对象。示例： 1234567891011121314151617181920212223public class Synchronized &amp;#123;    private static int count;    public Synchronized1">
+<meta property="og:type" content="article">
+<meta property="og:title" content="synchronized用法及底层实现原理">
+<meta property="og:url" content="http://yoursite.com/2020/03/30/synchronized%E7%94%A8%E6%B3%95%E5%8F%8A%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="synchronized使用方法一、 静态方法由于静态方式是属于类而不是对象的，所以使用synchronized修饰静态方法是锁定这个类的所有对象。示例： 1234567891011121314151617181920212223public class Synchronized &amp;#123;    private static int count;    public Synchronized1">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/img/javap-help.png">
+<meta property="og:image" content="http://yoursite.com/img/sync-monitor.png">
+<meta property="og:image" content="http://yoursite.com/img/sync-accsynchronized.png">
+<meta property="og:image" content="http://yoursite.com/img/sync-markword.png">
+<meta property="article:published_time" content="2020-03-30T04:27:30.348Z">
+<meta property="article:modified_time" content="2020-03-31T13:02:56.968Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/img/javap-help.png">
+  <!-- Canonical links -->
+  <link rel="canonical" href="http://yoursite.com/2020/03/30/synchronized%E7%94%A8%E6%B3%95%E5%8F%8A%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/index.html">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png" type="image/x-icon">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+  
+  
+  
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+
+<body class="main-center" itemscope itemtype="http://schema.org/WebPage">
+  <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+  <div class="slimContent">
+    <div class="navbar-header">
+      
+      
+      <div class="profile-block text-center">
+        <a id="avatar" href="https://github.com/cofess" target="_blank">
+          <img class="img-circle img-rotate" src="/images/avatar.jpg" width="200" height="200">
+        </a>
+        <h2 id="name" class="hidden-xs hidden-sm">昵称</h2>
+        <h3 id="title" class="hidden-xs hidden-sm hidden-md">Web Developer &amp; Designer</h3>
+        <small id="location" class="text-muted hidden-xs hidden-sm"><i class="icon icon-map-marker"></i> Shenzhen, China</small>
+      </div>
+      
+      <div class="search" id="search-form-wrap">
+
+    <form class="search-form sidebar-form">
+        <div class="input-group">
+            <input type="text" class="search-form-input form-control" placeholder="搜索" />
+            <span class="input-group-btn">
+                <button type="submit" class="search-form-submit btn btn-flat" onclick="return false;"><i class="icon icon-search"></i></button>
+            </span>
+        </div>
+    </form>
+    <div class="ins-search">
+  <div class="ins-search-mask"></div>
+  <div class="ins-search-container">
+    <div class="ins-input-wrapper">
+      <input type="text" class="ins-search-input" placeholder="想要查找什么..." x-webkit-speech />
+      <button type="button" class="close ins-close ins-selectable" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="ins-section-wrapper">
+      <div class="ins-section-container"></div>
+    </div>
+  </div>
+</div>
+
+
+</div>
+      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#main-navbar" aria-controls="main-navbar" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <nav id="main-navbar" class="collapse navbar-collapse" itemscope itemtype="http://schema.org/SiteNavigationElement" role="navigation">
+      <ul class="nav navbar-nav main-nav ">
+        
+        
+        <li class="menu-item menu-item-home">
+          <a href="/.">
+            
+            <i class="icon icon-home-fill"></i>
+            
+            <span class="menu-title">首页</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives">
+            
+            <i class="icon icon-archives-fill"></i>
+            
+            <span class="menu-title">归档</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories">
+            
+            <i class="icon icon-folder"></i>
+            
+            <span class="menu-title">分类</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags">
+            
+            <i class="icon icon-tags"></i>
+            
+            <span class="menu-title">标签</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-repository">
+          <a href="/repository">
+            
+            <i class="icon icon-project"></i>
+            
+            <span class="menu-title">项目</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-books">
+          <a href="/books">
+            
+            <i class="icon icon-book-fill"></i>
+            
+            <span class="menu-title">书单</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-links">
+          <a href="/links">
+            
+            <i class="icon icon-friendship"></i>
+            
+            <span class="menu-title">友链</span>
+          </a>
+        </li>
+        
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about">
+            
+            <i class="icon icon-cup-fill"></i>
+            
+            <span class="menu-title">关于</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+	
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/cofess" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="http://weibo.com/cofess" target="_blank" title="Weibo" data-toggle=tooltip data-placement=top><i class="icon icon-weibo"></i></a></li>
+        
+        <li><a href="https://twitter.com/iwebued" target="_blank" title="Twitter" data-toggle=tooltip data-placement=top><i class="icon icon-twitter"></i></a></li>
+        
+        <li><a href="https://www.behance.net/cofess" target="_blank" title="Behance" data-toggle=tooltip data-placement=top><i class="icon icon-behance"></i></a></li>
+        
+        <li><a href="/atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    </nav>
+  </div>
+</header>
+
+  
+    <aside class="sidebar" itemscope itemtype="http://schema.org/WPSideBar">
+  <div class="slimContent">
+    
+      <div class="widget">
+    <h3 class="widget-title">公告</h3>
+    <div class="widget-body">
+        <div id="board">
+            <div class="content">
+                <p>欢迎交流与分享经验!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+      
+
+    
+      
+
+    
+      
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget-body">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/03/">三月 2020</a><span class="archive-list-count">2</span></li></ul>
+    </div>
+  </div>
+
+
+    
+      
+  <div class="widget">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget-body">
+      <ul class="recent-post-list list-unstyled no-thumbnail">
+        
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                
+              </p>
+              <p class="item-title">
+                <a href="/2020/03/30/synchronized%E7%94%A8%E6%B3%95%E5%8F%8A%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/" class="title">synchronized用法及底层实现原理</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-03-30T04:27:30.348Z" itemprop="datePublished">2020-03-30</time>
+              </p>
+            </div>
+          </li>
+          
+          <li>
+            
+            <div class="item-inner">
+              <p class="item-category">
+                
+              </p>
+              <p class="item-title">
+                <a href="/2020/03/28/hello-world/" class="title">Hello World</a>
+              </p>
+              <p class="item-date">
+                <time datetime="2020-03-28T02:14:36.623Z" itemprop="datePublished">2020-03-28</time>
+              </p>
+            </div>
+          </li>
+          
+      </ul>
+    </div>
+  </div>
+  
+
+    
+  </div>
+</aside>
+
+  
+  
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-synchronized用法及底层实现原理" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
+    
+    <div class="article-header">
+      
+        
+  
+    <h1 class="article-title" itemprop="name">
+      synchronized用法及底层实现原理
+    </h1>
+  
+
+      
+      <div class="article-meta">
+        <span class="article-date">
+    <i class="icon icon-calendar-check"></i>
+	<a href="/2020/03/30/synchronized%E7%94%A8%E6%B3%95%E5%8F%8A%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/" class="article-date">
+	  <time datetime="2020-03-30T04:27:30.348Z" itemprop="datePublished">2020-03-30</time>
+	</a>
+</span>
+        
+        
+
+        
+
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="/2020/03/30/synchronized%E7%94%A8%E6%B3%95%E5%8F%8A%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/#comments" class="article-comment-link">评论</a></span>
+        
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <h1 id="synchronized使用方法"><a href="#synchronized使用方法" class="headerlink" title="synchronized使用方法"></a>synchronized使用方法</h1><h3 id="一、-静态方法"><a href="#一、-静态方法" class="headerlink" title="一、 静态方法"></a>一、 静态方法</h3><p>由于静态方式是属于类而不是对象的，所以使用synchronized修饰静态方法是锁定这个类的所有对象。<br>示例：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Synchronized</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> count;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Synchronized1</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        count = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">method</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; i++) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                System.out.println(Thread.currentThread().getName() + <span class="string">" is running, count = "</span> + (count++));</span><br><span class="line">                TimeUnit.SECONDS.sleep(<span class="number">1</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">new</span> Thread(Synchronized::method, <span class="string">"sync1"</span>).start();</span><br><span class="line">        <span class="keyword">new</span> Thread(Synchronized::method, <span class="string">"sync2"</span>).start();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行结果：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">sync1 is running, count = <span class="number">0</span></span><br><span class="line">sync1 is running, count = <span class="number">1</span></span><br><span class="line">sync1 is running, count = <span class="number">2</span></span><br><span class="line">sync1 is running, count = <span class="number">3</span></span><br><span class="line">sync1 is running, count = <span class="number">4</span></span><br><span class="line">sync2 is running, count = <span class="number">5</span></span><br><span class="line">sync2 is running, count = <span class="number">6</span></span><br><span class="line">sync2 is running, count = <span class="number">7</span></span><br><span class="line">sync2 is running, count = <span class="number">8</span></span><br><span class="line">sync2 is running, count = <span class="number">9</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="二、非静态方法"><a href="#二、非静态方法" class="headerlink" title="二、非静态方法"></a>二、非静态方法</h3><p>在非静态方法前加synchronized修饰，就是作用在当前对象的整个方法上。<br>示例：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Synchronized</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> count;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Synchronized</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        count = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">method</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(Thread.currentThread().getName() + <span class="string">" is running, count = "</span> + (count++));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; i++) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                method();</span><br><span class="line">                TimeUnit.SECONDS.sleep(<span class="number">1</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        Synchronized sync1 = <span class="keyword">new</span> Synchronized();</span><br><span class="line">        <span class="keyword">new</span> Thread(sync1, <span class="string">"sync1"</span>).start();</span><br><span class="line">        <span class="keyword">new</span> Thread(sync1, <span class="string">"sync2"</span>).start();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行结果：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">sync1 is running, count = <span class="number">0</span></span><br><span class="line">sync2 is running, count = <span class="number">1</span></span><br><span class="line">sync1 is running, count = <span class="number">2</span></span><br><span class="line">sync2 is running, count = <span class="number">3</span></span><br><span class="line">sync2 is running, count = <span class="number">4</span></span><br><span class="line">sync1 is running, count = <span class="number">5</span></span><br><span class="line">sync2 is running, count = <span class="number">6</span></span><br><span class="line">sync1 is running, count = <span class="number">7</span></span><br><span class="line">sync2 is running, count = <span class="number">8</span></span><br><span class="line">sync1 is running, count = <span class="number">9</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>synchronized修饰非静态方法时需注意以下几点：</strong><br>1.在定义接口方法时不能使用synchronized关键字。<br>2.构造方法上不能使用synchronized关键字，但可以使用synchronized代码块来进行同步。<br>3.synchronized关键字不能继承，如果要同步需要显式的加上关键字。<br>4.synchronized 关键字修饰的方法如果被重写默认不同步，如果要同步需要显式的加上关键字，或者super父类的方法也就相当于同步了。</p>
+<h3 id="三、代码块"><a href="#三、代码块" class="headerlink" title="三、代码块"></a>三、代码块</h3><p>当两个并发线程(thread1和thread2)访问同一个对象(syncThread)中的synchronized代码块时，在同一时刻只能有一个线程得到执行，另一个线程受阻塞，必须等待当前线程执行完这个代码块以后才能执行该代码块。Thread1和thread2是互斥的，因为在执行synchronized代码块时会锁定当前的对象，只有执行完该代码块才能释放该对象锁，下一个线程才能执行并锁定该对象<br>示例：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Synchronized</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> count;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Synchronized</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        count = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; i++) &#123;</span><br><span class="line">            <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">                System.out.println(Thread.currentThread().getName() + <span class="string">" is running, count = "</span> + (count++));</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                TimeUnit.SECONDS.sleep(<span class="number">1</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        Synchronized sync1 = <span class="keyword">new</span> Synchronized();</span><br><span class="line">        <span class="keyword">new</span> Thread(sync1, <span class="string">"sync1"</span>).start();</span><br><span class="line">        <span class="keyword">new</span> Thread(sync1, <span class="string">"sync2"</span>).start();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行结果：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">sync1 is running, count = <span class="number">0</span></span><br><span class="line">sync2 is running, count = <span class="number">1</span></span><br><span class="line">sync2 is running, count = <span class="number">2</span></span><br><span class="line">sync1 is running, count = <span class="number">3</span></span><br><span class="line">sync1 is running, count = <span class="number">4</span></span><br><span class="line">sync2 is running, count = <span class="number">5</span></span><br><span class="line">sync2 is running, count = <span class="number">6</span></span><br><span class="line">sync1 is running, count = <span class="number">7</span></span><br><span class="line">sync2 is running, count = <span class="number">8</span></span><br><span class="line">sync1 is running, count = <span class="number">9</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="synchronized底层实现原理"><a href="#synchronized底层实现原理" class="headerlink" title="synchronized底层实现原理"></a>synchronized底层实现原理</h1><p>想要了解synchronized底层实现原理我们需要使用javap命令对编译后的class文件进行反编译，查看生成的class文件。具体javap使用如下：</p>
+<p><img src="/img/javap-help.png" alt="javap-help"></p>
+<h3 id="一、修饰代码块"><a href="#一、修饰代码块" class="headerlink" title="一、修饰代码块"></a>一、修饰代码块</h3><p>通过javap命令反编译含有synchronized同步代码块的class：<br><img src="/img/sync-monitor.png" alt="sync-monitor"><br>可以发现monitorenter和monitorexit两个指令，这两个指令就是实现synchronized同步代码块的关键。Java中每一个对象都有一个监视器锁(monitor)，线程通过monitorenter和monitorexit两个指令获取对象的执行权限。</p>
+<p>线程执行monitorenter指令时会尝试获取monitor的所有权。具体过程为：如果monitor的进入数为0，表示monitor未被占用，则获取monitor所有权，将monitor进入数设为1，此线程即为monitor的所有者；如果monitor的进入数不为0，但是monitor的所有者就是此线程，则继续保持monitor所有权，将monitor进入数加1；如果monitor的进入数不为0，且monitor的所有者不是此线程，则该线程进入阻塞状态，直到monitor的进入数为0，再重新尝试获取monitor的所有权。</p>
+<p>当线程是对象对应monitor的所有者且执行monitorexit指令时，monitor的进入数减1，，如果减1后进入数为0，则线程退出monitor，不再是这个monitor的所有者。其他被这个monitor阻塞的线程可以尝试去获取这个monitor的所有权。</p>
+<h3 id="二、修饰方法"><a href="#二、修饰方法" class="headerlink" title="二、修饰方法"></a>二、修饰方法</h3><p>通过javap命令反编译含有synchronized同步方法的class：<br><img src="/img/sync-accsynchronized.png" alt="sync-accsynchronized"><br>可以发现用synchronized修饰的方法上用ACC_SYNCHRONIZED做了标记。</p>
+<p>当方法被调用时，调用指令会先检查方法的ACC_SYNCHRONIZED标志是否被设置，如果被设置，执行线程会优先获取monitor，获取成功之后才会执行方法体，执行完成后再释放monitor。在执行方法期间，其他线程都不能获取同一个monitor对象。</p>
+<h1 id="jdk1-8对synchronized的优化"><a href="#jdk1-8对synchronized的优化" class="headerlink" title="jdk1.8对synchronized的优化"></a>jdk1.8对synchronized的优化</h1><h3 id="java对象的内存模型"><a href="#java对象的内存模型" class="headerlink" title="java对象的内存模型"></a>java对象的内存模型</h3><p>一个java对象由对象标记、指针类型、真实数据、内存对齐四部分组成。其中对象标记和指针类型合称为对象头。</p>
+<ul>
+<li>对象标记也称为Mark Word字段，存储当前对象的一些运行时数据。如hashcode，GC分代年龄，锁状态标志位，线程持有的锁，偏向线程ID，等等。</li>
+<li>指针类型，JVM根据该指针确定该对象是哪个类的实例化对象。</li>
+<li>真实数据，即对象的属性值。</li>
+<li>内存补齐，当对象大小不是对齐数的整数倍时，进行补齐使得对象的整体大小是对齐数的整数倍方便寻址。</li>
+</ul>
+<h3 id="Mark-Word"><a href="#Mark-Word" class="headerlink" title="Mark Word"></a>Mark Word</h3><p><img src="/img/sync-markword.png" alt="sync-markword"></p>
+<h3 id="无锁-gt-偏向锁-gt-轻量级锁-gt-重量级锁升级过程"><a href="#无锁-gt-偏向锁-gt-轻量级锁-gt-重量级锁升级过程" class="headerlink" title="无锁-&gt;偏向锁-&gt;轻量级锁-&gt;重量级锁升级过程"></a>无锁-&gt;偏向锁-&gt;轻量级锁-&gt;重量级锁升级过程</h3><ul>
+<li><p>无锁-&gt;偏向锁：<br>线程1欲占有对象时，若Mark Word中偏向锁标识位(1bit)为0、锁标志位(2bit)为01，则将偏向锁标识位(1bit)设置为1、锁标志位(2bit)设置为01、偏向线程ID设置为此线程ID，即设置对象偏向线程1。</p>
+</li>
+<li><p>偏向锁获取：<br>线程1欲占有对象时，若Mark Word中偏向锁标识位(1bit)为1、锁标志位(2bit)为01，则判断偏向线程ID是否指向当前线程。如果指向当前线程则直接获取锁；如果并未指向当前线程，表明这个对象存在竞争，检查原来持有该对象的线程是否存活，如果原线程不存活则将对象置为无锁状态，然后设置对象偏向线程1，线程1获取偏向锁。</p>
+</li>
+<li><p>偏向锁-&gt;轻量级锁<br>线程2欲占有对象时，若Mark Word中偏向锁标识位(1bit)为1、锁标志位(2bit)为01、偏向线程ID并未指向当前线程，且检查发现原来持有该对象的线程依旧存活，则升级为轻量级锁。</p>
+</li>
+<li><p>轻量级锁获取：<br>线程2欲占有对象时，若已升级为轻量级锁，则复制Mark Word到线程栈帧锁记录(Lock Record)中，然后使用CAS尝试将对象的Mark Word指向栈帧锁记录(Lock Record)。如果成功当前线程获取锁；如果失败，线程2暂不进入内核态，而是自旋执行空循环继续尝试获取锁。</p>
+</li>
+<li><p>轻量级锁-&gt;重量级锁<br>线程2欲占有对象获取轻量级锁失败进入自旋时若有线程3也欲占有该对象，或者线程2欲占有对象获取轻量级锁失败进入自旋且自旋策略完成后仍然没有获取到锁，则轻量级锁会升级为重量级锁。</p>
+</li>
+</ul>
+
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="http://yoursite.com/2020/03/30/synchronized%E7%94%A8%E6%B3%95%E5%8F%8A%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/" title="synchronized用法及底层实现原理" target="_blank" rel="external">http://yoursite.com/2020/03/30/synchronized%E7%94%A8%E6%B3%95%E5%8F%8A%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN协议</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/cofess" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="/images/avatar.jpg" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/cofess" target="_blank"><span class="text-dark">昵称</span><small class="ml-1x">Web Developer &amp; Designer</small></a></h3>
+        <div>个人简介。</div>
+      </div>
+    </figure>
+  </div>
+</div>
+
+
+    </div>
+  </article>
+  
+    
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
+    
+  </section>
+
+
+  
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
+  
+  <ul class="pager pull-left">
+    
+    
+    <li class="next">
+      <a href="/2020/03/28/hello-world/" title="Hello World"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+  </ul>
+  
+  
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>赏</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
+  
+  
+  <div class="bar-right">
+    
+    <div class="share-component" data-sites="weibo,qq,wechat,facebook,twitter" data-mobile-sites="weibo,qq,qzone"></div>
+    
+  </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>感谢您的支持，我会继续努力的!</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="/images/donate/alipayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开支付宝扫一扫，即可进行扫码打赏哦</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="/images/donate/wechatpayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开微信扫一扫，即可进行扫码打赏哦</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> 支付宝</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> 微信支付</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</main>
+
+  <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
+	
+	
+    <ul class="social-links">
+    	
+        <li><a href="https://github.com/cofess" target="_blank" title="Github" data-toggle=tooltip data-placement=top><i class="icon icon-github"></i></a></li>
+        
+        <li><a href="http://weibo.com/cofess" target="_blank" title="Weibo" data-toggle=tooltip data-placement=top><i class="icon icon-weibo"></i></a></li>
+        
+        <li><a href="https://twitter.com/iwebued" target="_blank" title="Twitter" data-toggle=tooltip data-placement=top><i class="icon icon-twitter"></i></a></li>
+        
+        <li><a href="https://www.behance.net/cofess" target="_blank" title="Behance" data-toggle=tooltip data-placement=top><i class="icon icon-behance"></i></a></li>
+        
+        <li><a href="/atom.xml" target="_blank" title="Rss" data-toggle=tooltip data-placement=top><i class="icon icon-rss"></i></a></li>
+        
+    </ul>
+
+    <div class="copyright">
+    	
+        <div class="publishby">
+        	Theme by <a href="https://github.com/cofess" target="_blank"> cofess </a>base on <a href="https://github.com/cofess/hexo-theme-pure" target="_blank">pure</a>.
+        </div>
+    </div>
+</footer>
+  <script src="//cdn.jsdelivr.net/npm/jquery@1.12.4/dist/jquery.min.js"></script>
+<script>
+window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
+</script>
+
+<script src="/js/plugin.min.js"></script>
+
+
+<script src="/js/application.js"></script>
+
+
+    <script>
+(function (window) {
+    var INSIGHT_CONFIG = {
+        TRANSLATION: {
+            POSTS: '文章',
+            PAGES: '页面',
+            CATEGORIES: '分类',
+            TAGS: '标签',
+            UNTITLED: '(未命名)',
+        },
+        ROOT_URL: '/',
+        CONTENT_URL: '/content.json',
+    };
+    window.INSIGHT_CONFIG = INSIGHT_CONFIG;
+})(window);
+</script>
+
+<script src="/js/insight.js"></script>
+
+
+
+
+
+
+   
+
+
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: false,
+    appId: '',
+    appKey: '',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+  </script>
+
+     
+
+
+
+
+
+
+
+</body>
+</html>

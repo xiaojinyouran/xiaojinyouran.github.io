@@ -5559,10 +5559,10 @@ pre code {
 
 .highlight {
   position: relative;
-  padding: 32px 10px 0 10px;
+  padding: 0px 10px 0 10px;
   border-radius: 4px;
 }
-
+/**
 .highlight:before {
   display: block;
   content: ' ';
@@ -5590,6 +5590,7 @@ pre code {
   -webkit-box-shadow: 20px 0 #fdbc40,40px 0 #35cd4b;
   box-shadow: 20px 0 #fdbc40,40px 0 #35cd4b;
 }
+**/
 
 .highlight pre {
   border: none;
@@ -8182,7 +8183,7 @@ body.okayNav-loaded {
   .marked-body .markdownIt-Anchor:before {
     display: inline-block;
     width: 18px;
-    content: "#";
+    //content: "#";
     color: #0a6ebd;
     text-align: right;
     float: left;
