@@ -26,8 +26,10 @@
 <meta property="og:description" content="jdk1.7源码实现数据结构及原理jdk1.7中HashMap采用数组加链表的数据结构，链表节点使用Entry对象。put时根据计算key计算获得key的hashcode，在用key的hash值和数组容量计算出所要插入位置的数组下标。若数组该位置没有元素，使用key、value、hash值信息创建Entry，直接插入该位置；若数组该位置有元素，遍历该位置的元素查找是否存在相同key的元素，如果有则">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://yoursite.com/img/hashmap-hash.png">
+<meta property="og:image" content="http://yoursite.com/img/hashmap-hash18.png">
+<meta property="og:image" content="http://yoursite.com/img/hashmap-hash.png">
 <meta property="article:published_time" content="2020-04-01T11:27:43.000Z">
-<meta property="article:modified_time" content="2020-04-03T03:16:49.069Z">
+<meta property="article:modified_time" content="2020-04-03T03:50:24.904Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="java源码">
 <meta name="twitter:card" content="summary">
@@ -363,6 +365,7 @@
 </ul>
 <h3 id="为什么数组大小一定要是2的整数次幂"><a href="#为什么数组大小一定要是2的整数次幂" class="headerlink" title="为什么数组大小一定要是2的整数次幂"></a>为什么数组大小一定要是2的整数次幂</h3><p>无论是jdk1.7还是jdk1.8，计算key的hash值在数组中位置时，都是采用key的hash值和数组长度减1进行与运算(hash值 &amp; (table.length-1))，通过这种位运算提高运算效率，同时使得hash值尽可能均匀分布在数组中。</p>
 <h3 id="jdk1-7中为什么使用繁琐的计算获取hashcode"><a href="#jdk1-7中为什么使用繁琐的计算获取hashcode" class="headerlink" title="jdk1.7中为什么使用繁琐的计算获取hashcode"></a>jdk1.7中为什么使用繁琐的计算获取hashcode</h3><p><img src="/img/hashmap-hash.png" alt="hashmap-hash"><br>通过jdk1.7的源码可以看出HashMap在计算key的hash值时，会经过多次运算，同一系列的运算使得key的hashcode的高位也参与到运算中，得到一个尽可能均匀的hash值，从而使得key的hash值在数组中尽可能均匀分布。</p>
+<h3 id="为什么jdk1-8中计算key的hash值的计算过程比jdk1-7简化了"><a href="#为什么jdk1-8中计算key的hash值的计算过程比jdk1-7简化了" class="headerlink" title="为什么jdk1.8中计算key的hash值的计算过程比jdk1.7简化了"></a>为什么jdk1.8中计算key的hash值的计算过程比jdk1.7简化了</h3><p>jdk1.8:<br><img src="/img/hashmap-hash18.png" alt="hashmap-hash18"><br>jdk1.7:<br><img src="/img/hashmap-hash.png" alt="hashmap-hash"><br>在jdk1.8中引用了链表加红黑树的结构，当数组中某一位置的链表长度达到一定值时会转化成红黑树以提高查询效率，故而在hash值的计算上即使不算均匀也能保证查询效率。</p>
 
       
     </div>
