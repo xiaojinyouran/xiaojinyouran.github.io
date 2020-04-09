@@ -25,11 +25,17 @@
 <meta property="og:site_name" content="Hexo">
 <meta property="og:description" content="为什么要分库分表 当数据量过大时，数据库的存储压力会增大，查询速度也会降低； 当高并发下程序访问数据库时，大量线程同时访问数据会导致数据库访问压力增大；为解决以上问题，就出现了数据库分库分表，将数据存储在多个数据库中，从而降低数据库的存储压力提高查询速度，均衡负载高并发下的数据库访问压力。  分库分表方式垂直拆分垂直拆分是按照一定规则(功能、类型、业务等)将数据库中的表拆到多个数据库中，或将一张宽">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/img/fkfb/fkfb-001.png">
+<meta property="og:image" content="http://yoursite.com/img/fkfb/fkfb-002.png">
+<meta property="og:image" content="http://yoursite.com/img/fkfb/fkfb-003.png">
+<meta property="og:image" content="http://yoursite.com/img/fkfb/fkfb-004.png">
+<meta property="og:image" content="http://yoursite.com/img/fkfb/fkfb-005.png">
 <meta property="article:published_time" content="2020-04-07T01:21:18.000Z">
-<meta property="article:modified_time" content="2020-04-07T02:39:14.120Z">
+<meta property="article:modified_time" content="2020-04-09T01:30:39.718Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="数据库">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/img/fkfb/fkfb-001.png">
   <!-- Canonical links -->
   <link rel="canonical" href="http://yoursite.com/2020/04/07/202004070921/index.html">
   
@@ -382,6 +388,33 @@
 <li>系统层数据处理：从不同数据库查询出关联数据，然后通过代码进行组装，但是代码量会增加，使得代码臃肿。</li>
 </ol>
 <p>二、 分页查询</p>
+<ol>
+<li><p>全局野视法<br>假设查询第x页数据，每页y条，排序字段为time，共有n个库。以MySql为例，单库下查询语句为”select * from db order by time limit (x-1)y,y”，在多库下可以在每个库上执行”select * from db order by time limit 0,(x-1)y+y”来获取每个库的前x页数据，然后在内存中对n((x-1)y+y)进行排序，再取偏移量(x-1)y后的y条数据，即为第x页数据。但是，随着页数的增加，内存中需要处理的数据量就会越大，对内存的消耗极为可观。</p>
+</li>
+<li><p>创建额外关联表<br>添加一张额外的关联表，表中存储数据的ID、分页依据字段、数据所在库信息(第几个库)，查询时先根据关联表查询分页数据信息，在关联详细数据。缺点是随着数据的增长，关联表会随之增长。</p>
+</li>
+<li><p>禁止跳页法<br>假设查询第x页数据，每页y条，排序字段为time，共有n个库。以MySql为例，查询第一页时在每个库上通过”select * from db order by time limit 0,y”取得ny条数据在内存中进行排序取前y条，同时记录y条数据中最大time值即第y条的time值为$time_max，查询第二页时在每个库上通过”select * from db where time&gt;$time_max order by time limit 0,y”取得ny条数据在内存中进行排序取前y条，同时记录y条数据中最大time值即第y条的time值为$time_max，以此类推。缺点是不支持跳页查询。</p>
+</li>
+<li><p>二次查询法<br>假设查询第x页数据，每页y条，排序字段为time，共有n个库。以MySql为例，单库下查询语句为”select * from db order by time limit (x-1)y,y”，在多库下可以如下操作：</p>
+</li>
+</ol>
+<ul>
+<li><p>在每个库上执行”select * from db order by time limit (x-1)y/n,y”来获取每个库的y条数据；</p>
+<p><img src="/img/fkfb/fkfb-001.png" alt="fkfb-001"></p>
+</li>
+<li><p>然后记录每个库返回数据的最小time值time_min_1、time_min_2……time_min_n以及每个库返回的最大time值time_max_1、time_max_2……time_max_n，比较所有库返回的最小time值取其中最小值$time_min；</p>
+<p><img src="/img/fkfb/fkfb-002.png" alt="fkfb-002"></p>
+</li>
+<li><p>在每个库上查询time在$time_min到该库刚刚返回的最大time值time_max_i，即在每个库上执行”select * from db where time between $time_min and time_max_i order by time”，取得每个库上大于等于y条数据；</p>
+<p><img src="/img/fkfb/fkfb-003.png" alt="fkfb-003"></p>
+</li>
+<li><p>计算每个库上第二次返回的数据条数与第一次返回的数据条数之间的差值offest_1、offest_2…..offest_n，即(x-1)y-offest_1-offest_2…..-offest_n即为$time_min实际位置，即$time_min位置向后推移offest_1+offest_2…..+offest_n条记录后的位置即为当前页首条记录的前一条；</p>
+<p><img src="/img/fkfb/fkfb-004.png" alt="fkfb-003"></p>
+</li>
+<li><p>对第二次查询的所有记录排序，舍弃offest_1+offest_2…..+offest_n条，取之后的y条即为当前页记录；</p>
+<p><img src="/img/fkfb/fkfb-005.png" alt="fkfb-003"></p>
+</li>
+</ul>
 <p>三、 主键管理</p>
 <ol>
 <li>数据库中添加一张表使用自增规则生成不重复主键，使用锁机制使每次生成一个主键，生成主键之后执行一次主键增加。</li>
