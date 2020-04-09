@@ -31,7 +31,7 @@
 <meta property="og:image" content="http://yoursite.com/img/fkfb/fkfb-004.png">
 <meta property="og:image" content="http://yoursite.com/img/fkfb/fkfb-005.png">
 <meta property="article:published_time" content="2020-04-09T01:36:00.000Z">
-<meta property="article:modified_time" content="2020-04-09T01:44:33.890Z">
+<meta property="article:modified_time" content="2020-04-09T01:48:03.850Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="数据库">
 <meta name="twitter:card" content="summary">
@@ -383,10 +383,14 @@
     <div class="article-entry marked-body" itemprop="articleBody">
       
         <h1 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h1><ol>
-<li>全局野视法<br>假设查询第x页数据，每页y条，排序字段为time，共有n个库。以MySql为例，单库下查询语句为”select * from db order by time limit (x-1)y,y”，在多库下可以在每个库上执行”select * from db order by time limit 0,(x-1)y+y”来获取每个库的前x页数据，然后在内存中对n((x-1)y+y)进行排序，再取偏移量(x-1)y后的y条数据，即为第x页数据。</li>
-<li>创建额外关联表<br>添加一张额外的关联表，表中存储数据的ID、分页依据字段、数据所在库信息(第几个库)，查询时先根据关联表查询分页数据信息，在关联详细数据。</li>
-<li>禁止跳页法<br>假设查询第x页数据，每页y条，排序字段为time，共有n个库。以MySql为例，查询第一页时在每个库上通过”select * from db order by time limit 0,y”取得ny条数据在内存中进行排序取前y条，同时记录y条数据中最大time值即第y条的time值为$time_max，查询第二页时在每个库上通过”select * from db where time&gt;$time_max order by time limit 0,y”取得ny条数据在内存中进行排序取前y条，同时记录y条数据中最大time值即第y条的time值为$time_max，以此类推。</li>
-<li>二次查询法<br>假设查询第x页数据，每页y条，排序字段为time，共有n个库。以MySql为例，单库下查询语句为”select * from db order by time limit (x-1)y,y”，在多库下可以如下操作：</li>
+<li><p>全局野视法<br>假设查询第x页数据，每页y条，排序字段为time，共有n个库。以MySql为例，单库下查询语句为”select * from db order by time limit (x-1)y,y”，在多库下可以在每个库上执行”select * from db order by time limit 0,(x-1)y+y”来获取每个库的前x页数据，然后在内存中对n((x-1)y+y)进行排序，再取偏移量(x-1)y后的y条数据，即为第x页数据。</p>
+</li>
+<li><p>创建额外关联表<br>添加一张额外的关联表，表中存储数据的ID、分页依据字段、数据所在库信息(第几个库)，查询时先根据关联表查询分页数据信息，在关联详细数据。</p>
+</li>
+<li><p>禁止跳页法<br>假设查询第x页数据，每页y条，排序字段为time，共有n个库。以MySql为例，查询第一页时在每个库上通过”select * from db order by time limit 0,y”取得ny条数据在内存中进行排序取前y条，同时记录y条数据中最大time值即第y条的time值为$time_max，查询第二页时在每个库上通过”select * from db where time&gt;$time_max order by time limit 0,y”取得ny条数据在内存中进行排序取前y条，同时记录y条数据中最大time值即第y条的time值为$time_max，以此类推。</p>
+</li>
+<li><p>二次查询法<br>假设查询第x页数据，每页y条，排序字段为time，共有n个库。以MySql为例，单库下查询语句为”select * from db order by time limit (x-1)y,y”，在多库下可以如下操作：</p>
+</li>
 </ol>
 <ul>
 <li>在每个库上执行”select * from db order by time limit (x-1)y/n,y”来获取每个库的y条数据；<br><img src="/img/fkfb/fkfb-001.png" alt="fkfb-001"></li>
