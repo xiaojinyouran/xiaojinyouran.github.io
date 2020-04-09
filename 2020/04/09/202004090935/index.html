@@ -31,7 +31,7 @@
 <meta property="og:image" content="http://yoursite.com/img/fkfb/fkfb-004.png">
 <meta property="og:image" content="http://yoursite.com/img/fkfb/fkfb-005.png">
 <meta property="article:published_time" content="2020-04-09T01:36:00.000Z">
-<meta property="article:modified_time" content="2020-04-09T01:48:03.850Z">
+<meta property="article:modified_time" content="2020-04-09T01:54:00.173Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="数据库">
 <meta name="twitter:card" content="summary">
@@ -393,11 +393,16 @@
 </li>
 </ol>
 <ul>
-<li>在每个库上执行”select * from db order by time limit (x-1)y/n,y”来获取每个库的y条数据；<br><img src="/img/fkfb/fkfb-001.png" alt="fkfb-001"></li>
-<li>然后记录每个库返回数据的最小time值time_min_1、time_min_2……time_min_n以及每个库返回的最大time值time_max_1、time_max_2……time_max_n，比较所有库返回的最小time值取其中最小值$time_min；<br><img src="/img/fkfb/fkfb-002.png" alt="fkfb-002"></li>
-<li>在每个库上查询time在$time_min到该库刚刚返回的最大time值time_max_i，即在每个库上执行”select * from db where time between $time_min and time_max_i order by time”，取得每个库上大于等于y条数据；<br><img src="/img/fkfb/fkfb-003.png" alt="fkfb-003"></li>
-<li>计算每个库上第二次返回的数据条数与第一次返回的数据条数之间的差值offest_1、offest_2…..offest_n，即(x-1)y-offest_1-offest_2…..-offest_n即为$time_min实际位置，即$time_min位置向后推移offest_1+offest_2…..+offest_n条记录后的位置即为当前页首条记录的前一条；<br><img src="/img/fkfb/fkfb-004.png" alt="fkfb-003"></li>
-<li>对第二次查询的所有记录排序，舍弃offest_1+offest_2…..+offest_n条，取之后的y条即为当前页记录；<br><img src="/img/fkfb/fkfb-005.png" alt="fkfb-003"></li>
+<li><p>在每个库上执行”select * from db order by time limit (x-1)y/n,y”来获取每个库的y条数据；<br><img src="/img/fkfb/fkfb-001.png" alt="fkfb-001"></p>
+</li>
+<li><p>然后记录每个库返回数据的最小time值time_min_1、time_min_2……time_min_n以及每个库返回的最大time值time_max_1、time_max_2……time_max_n，比较所有库返回的最小time值取其中最小值$time_min；<br><img src="/img/fkfb/fkfb-002.png" alt="fkfb-002"></p>
+</li>
+<li><p>在每个库上查询time在$time_min到该库刚刚返回的最大time值time_max_i，即在每个库上执行”select * from db where time between $time_min and time_max_i order by time”，取得每个库上大于等于y条数据；<br><img src="/img/fkfb/fkfb-003.png" alt="fkfb-003"></p>
+</li>
+<li><p>计算每个库上第二次返回的数据条数与第一次返回的数据条数之间的差值offest_1、offest_2…..offest_n，即(x-1)y-offest_1-offest_2…..-offest_n即为$time_min实际位置，即$time_min位置向后推移offest_1+offest_2…..+offest_n条记录后的位置即为当前页首条记录的前一条；<br><img src="/img/fkfb/fkfb-004.png" alt="fkfb-003"></p>
+</li>
+<li><p>对第二次查询的所有记录排序，舍弃offest_1+offest_2…..+offest_n条，取之后的y条即为当前页记录；<br><img src="/img/fkfb/fkfb-005.png" alt="fkfb-003"></p>
+</li>
 </ul>
 <h1 id="方案选择"><a href="#方案选择" class="headerlink" title="方案选择"></a>方案选择</h1><p>第一种方式随着查询页数的增加，内存中需要处理的数据会大量增加，当数据量达到一定程度时会导致内存资源大量消耗；第二种方式随着数据量的增加，关联表会逐渐增大；第三种方式相对简洁高效，但是不支持跳页查询；第四种方式最大的缺陷就是需要进行二次查询。</p>
 
