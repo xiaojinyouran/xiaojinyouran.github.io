@@ -17,16 +17,27 @@
   <meta http-equiv="window-target" content="_top" />
   
   
-  <title>Hexo</title>
-  <meta property="og:type" content="website">
-<meta property="og:title" content="Hexo">
-<meta property="og:url" content="http://yoursite.com/index.html">
+  <title>水平分库分表下分页查询 | Hexo</title>
+  <meta name="description" content="解决方案 全局野视法假设查询第x页数据，每页y条，排序字段为time，共有n个库。以MySql为例，单库下查询语句为”select * from db order by time limit (x-1)y,y”，在多库下可以在每个库上执行”select * from db order by time limit 0,(x-1)y+y”来获取每个库的前x页数据，然后在内存中对n((x-1)y+y)进">
+<meta property="og:type" content="article">
+<meta property="og:title" content="水平分库分表下分页查询">
+<meta property="og:url" content="http://yoursite.com/2020/04/09/202004090935/index.html">
 <meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="解决方案 全局野视法假设查询第x页数据，每页y条，排序字段为time，共有n个库。以MySql为例，单库下查询语句为”select * from db order by time limit (x-1)y,y”，在多库下可以在每个库上执行”select * from db order by time limit 0,(x-1)y+y”来获取每个库的前x页数据，然后在内存中对n((x-1)y+y)进">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/img/fkfb/fkfb-001.png">
+<meta property="og:image" content="http://yoursite.com/img/fkfb/fkfb-002.png">
+<meta property="og:image" content="http://yoursite.com/img/fkfb/fkfb-003.png">
+<meta property="og:image" content="http://yoursite.com/img/fkfb/fkfb-004.png">
+<meta property="og:image" content="http://yoursite.com/img/fkfb/fkfb-005.png">
+<meta property="article:published_time" content="2020-04-09T01:36:00.000Z">
+<meta property="article:modified_time" content="2020-04-09T01:44:33.890Z">
 <meta property="article:author" content="John Doe">
+<meta property="article:tag" content="数据库">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/img/fkfb/fkfb-001.png">
   <!-- Canonical links -->
-  <link rel="canonical" href="http://yoursite.com/index.html">
+  <link rel="canonical" href="http://yoursite.com/2020/04/09/202004090935/index.html">
   
     <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
   
@@ -333,168 +344,181 @@
 </aside>
 
   
-  <main class="main" role="main">
   
-  <div class="content article-list">
+<main class="main" role="main">
+  <div class="content">
+  <article id="post-202004090935" class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
     
-      <article class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
-  <div class="article-header">
-    
+    <div class="article-header">
+      
+        
   
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/04/09/202004090935/">水平分库分表下分页查询</a>
+    <h1 class="article-title" itemprop="name">
+      水平分库分表下分页查询
     </h1>
   
 
-  </div>
-  
-  <p class="article-meta">
-    <span class="article-date">
+      
+      <div class="article-meta">
+        <span class="article-date">
     <i class="icon icon-calendar-check"></i>
 	<a href="/2020/04/09/202004090935/" class="article-date">
-	  <time datetime="2020-04-09T01:36:00.000Z" itemprop="datePublished">4月 9</time>
+	  <time datetime="2020-04-09T01:36:00.000Z" itemprop="datePublished">2020-04-09</time>
 	</a>
 </span>
-    
-    
+        
+        
   <span class="article-tag">
     <i class="icon icon-tags"></i>
 	<a class="article-tag-link" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a>
   </span>
 
 
-    <span class="post-comment"><i class="icon icon-comment"></i> <a href="/2020/04/09/202004090935/#comments" class="article-comment-link">评论</a></span>
-    
-  </p>
-</article>
+        
 
-    
-      <article class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
-  <div class="article-header">
-    
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/04/07/202004070921/">数据库分库分表</a>
-    </h1>
-  
+        <span class="post-comment"><i class="icon icon-comment"></i> <a href="/2020/04/09/202004090935/#comments" class="article-comment-link">评论</a></span>
+        
+      </div>
+    </div>
+    <div class="article-entry marked-body" itemprop="articleBody">
+      
+        <h1 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h1><ol>
+<li>全局野视法<br>假设查询第x页数据，每页y条，排序字段为time，共有n个库。以MySql为例，单库下查询语句为”select * from db order by time limit (x-1)y,y”，在多库下可以在每个库上执行”select * from db order by time limit 0,(x-1)y+y”来获取每个库的前x页数据，然后在内存中对n((x-1)y+y)进行排序，再取偏移量(x-1)y后的y条数据，即为第x页数据。</li>
+<li>创建额外关联表<br>添加一张额外的关联表，表中存储数据的ID、分页依据字段、数据所在库信息(第几个库)，查询时先根据关联表查询分页数据信息，在关联详细数据。</li>
+<li>禁止跳页法<br>假设查询第x页数据，每页y条，排序字段为time，共有n个库。以MySql为例，查询第一页时在每个库上通过”select * from db order by time limit 0,y”取得ny条数据在内存中进行排序取前y条，同时记录y条数据中最大time值即第y条的time值为$time_max，查询第二页时在每个库上通过”select * from db where time&gt;$time_max order by time limit 0,y”取得ny条数据在内存中进行排序取前y条，同时记录y条数据中最大time值即第y条的time值为$time_max，以此类推。</li>
+<li>二次查询法<br>假设查询第x页数据，每页y条，排序字段为time，共有n个库。以MySql为例，单库下查询语句为”select * from db order by time limit (x-1)y,y”，在多库下可以如下操作：</li>
+</ol>
+<ul>
+<li>在每个库上执行”select * from db order by time limit (x-1)y/n,y”来获取每个库的y条数据；<br><img src="/img/fkfb/fkfb-001.png" alt="fkfb-001"></li>
+<li>然后记录每个库返回数据的最小time值time_min_1、time_min_2……time_min_n以及每个库返回的最大time值time_max_1、time_max_2……time_max_n，比较所有库返回的最小time值取其中最小值$time_min；<br><img src="/img/fkfb/fkfb-002.png" alt="fkfb-002"></li>
+<li>在每个库上查询time在$time_min到该库刚刚返回的最大time值time_max_i，即在每个库上执行”select * from db where time between $time_min and time_max_i order by time”，取得每个库上大于等于y条数据；<br><img src="/img/fkfb/fkfb-003.png" alt="fkfb-003"></li>
+<li>计算每个库上第二次返回的数据条数与第一次返回的数据条数之间的差值offest_1、offest_2…..offest_n，即(x-1)y-offest_1-offest_2…..-offest_n即为$time_min实际位置，即$time_min位置向后推移offest_1+offest_2…..+offest_n条记录后的位置即为当前页首条记录的前一条；<br><img src="/img/fkfb/fkfb-004.png" alt="fkfb-003"></li>
+<li>对第二次查询的所有记录排序，舍弃offest_1+offest_2…..+offest_n条，取之后的y条即为当前页记录；<br><img src="/img/fkfb/fkfb-005.png" alt="fkfb-003"></li>
+</ul>
+<h1 id="方案选择"><a href="#方案选择" class="headerlink" title="方案选择"></a>方案选择</h1><p>第一种方式随着查询页数的增加，内存中需要处理的数据会大量增加，当数据量达到一定程度时会导致内存资源大量消耗；第二种方式随着数据量的增加，关联表会逐渐增大；第三种方式相对简洁高效，但是不支持跳页查询；第四种方式最大的缺陷就是需要进行二次查询。</p>
 
+      
+    </div>
+    <div class="article-footer">
+      <blockquote class="mt-2x">
+  <ul class="post-copyright list-unstyled">
+    
+    <li class="post-copyright-link hidden-xs">
+      <strong>本文链接：</strong>
+      <a href="http://yoursite.com/2020/04/09/202004090935/" title="水平分库分表下分页查询" target="_blank" rel="external">http://yoursite.com/2020/04/09/202004090935/</a>
+    </li>
+    
+    <li class="post-copyright-license">
+      <strong>版权声明： </strong> 本博客所有文章除特别声明外，均采用 <a href="http://creativecommons.org/licenses/by/4.0/deed.zh" target="_blank" rel="external">CC BY 4.0 CN协议</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+</blockquote>
+
+
+<div class="panel panel-default panel-badger">
+  <div class="panel-body">
+    <figure class="media">
+      <div class="media-left">
+        <a href="https://github.com/cofess" target="_blank" class="img-burn thumb-sm visible-lg">
+          <img src="/images/avatar.jpg" class="img-rounded w-full" alt="">
+        </a>
+      </div>
+      <div class="media-body">
+        <h3 class="media-heading"><a href="https://github.com/cofess" target="_blank"><span class="text-dark">昵称</span><small class="ml-1x">Web Developer &amp; Designer</small></a></h3>
+        <div>个人简介。</div>
+      </div>
+    </figure>
   </div>
+</div>
+
+
+    </div>
+  </article>
   
-  <p class="article-meta">
-    <span class="article-date">
-    <i class="icon icon-calendar-check"></i>
-	<a href="/2020/04/07/202004070921/" class="article-date">
-	  <time datetime="2020-04-07T01:21:18.000Z" itemprop="datePublished">4月 7</time>
-	</a>
-</span>
     
+  <section id="comments">
+  	
+      <div id="vcomments"></div>
     
-  <span class="article-tag">
-    <i class="icon icon-tags"></i>
-	<a class="article-tag-link" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a>
-  </span>
+  </section>
 
 
-    <span class="post-comment"><i class="icon icon-comment"></i> <a href="/2020/04/07/202004070921/#comments" class="article-comment-link">评论</a></span>
-    
-  </p>
-</article>
-
-    
-      <article class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
-  <div class="article-header">
-    
   
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/04/01/202004011927/">HashMap的底层实现原理</a>
-    </h1>
+</div>
+
+  <nav class="bar bar-footer clearfix" data-stick-bottom>
+  <div class="bar-inner">
   
-
-  </div>
+  <ul class="pager pull-left">
+    
+    
+    <li class="next">
+      <a href="/2020/04/07/202004070921/" title="数据库分库分表"><span>下一篇&nbsp;&nbsp;</span><i class="icon icon-angle-right" aria-hidden="true"></i></a>
+    </li>
+    
+    
+  </ul>
   
-  <p class="article-meta">
-    <span class="article-date">
-    <i class="icon icon-calendar-check"></i>
-	<a href="/2020/04/01/202004011927/" class="article-date">
-	  <time datetime="2020-04-01T11:27:43.000Z" itemprop="datePublished">4月 1</time>
-	</a>
-</span>
-    
-    
-  <span class="article-tag">
-    <i class="icon icon-tags"></i>
-	<a class="article-tag-link" href="/tags/java%E6%BA%90%E7%A0%81/" rel="tag">java源码</a>
-  </span>
-
-
-    <span class="post-comment"><i class="icon icon-comment"></i> <a href="/2020/04/01/202004011927/#comments" class="article-comment-link">评论</a></span>
-    
-  </p>
-</article>
-
-    
-      <article class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
-  <div class="article-header">
-    
   
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/03/30/202003301054/">synchronized用法及底层实现原理</a>
-    </h1>
+  <!-- Button trigger modal -->
+  <button type="button" class="btn btn-fancy btn-donate pop-onhover bg-gradient-warning" data-toggle="modal" data-target="#donateModal"><span>赏</span></button>
+  <!-- <div class="wave-icon wave-icon-danger btn-donate" data-toggle="modal" data-target="#donateModal">
+    <div class="wave-circle"><span class="icon"><i class="icon icon-bill"></i></span></div>
+  </div> -->
   
-
-  </div>
   
-  <p class="article-meta">
-    <span class="article-date">
-    <i class="icon icon-calendar-check"></i>
-	<a href="/2020/03/30/202003301054/" class="article-date">
-	  <time datetime="2020-03-30T02:54:43.000Z" itemprop="datePublished">3月 30</time>
-	</a>
-</span>
+  <div class="bar-right">
     
-    
-  <span class="article-tag">
-    <i class="icon icon-tags"></i>
-	<a class="article-tag-link" href="/tags/java%E6%BA%90%E7%A0%81/" rel="tag">java源码</a>
-  </span>
-
-
-    <span class="post-comment"><i class="icon icon-comment"></i> <a href="/2020/03/30/202003301054/#comments" class="article-comment-link">评论</a></span>
-    
-  </p>
-</article>
-
-    
-      <article class="article article-type-post" itemscope itemtype="http://schema.org/BlogPosting">
-  <div class="article-header">
-    
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/03/28/hello-world/">Hello World</a>
-    </h1>
-  
-
-  </div>
-  
-  <p class="article-meta">
-    <span class="article-date">
-    <i class="icon icon-calendar-check"></i>
-	<a href="/2020/03/28/hello-world/" class="article-date">
-	  <time datetime="2020-03-28T02:14:36.623Z" itemprop="datePublished">3月 28</time>
-	</a>
-</span>
-    
-    
-
-    <span class="post-comment"><i class="icon icon-comment"></i> <a href="/2020/03/28/hello-world/#comments" class="article-comment-link">评论</a></span>
-    
-  </p>
-</article>
-
+    <div class="share-component" data-sites="weibo,qq,wechat,facebook,twitter" data-mobile-sites="weibo,qq,qzone"></div>
     
   </div>
+  </div>
+</nav>
+  
+<!-- Modal -->
+<div class="modal modal-center modal-small modal-xs-full fade" id="donateModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content donate">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-body">
+        <div class="donate-box">
+          <div class="donate-head">
+            <p>感谢您的支持，我会继续努力的!</p>
+          </div>
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane fade active in" id="alipay">
+              <div class="donate-payimg">
+                <img src="/images/donate/alipayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开支付宝扫一扫，即可进行扫码打赏哦</p>
+            </div>
+            <div role="tabpanel" class="tab-pane fade" id="wechatpay">
+              <div class="donate-payimg">
+                <img src="/images/donate/wechatpayimg.png" alt="扫码支持" title="扫一扫" />
+              </div>
+              <p class="text-muted mv">扫码打赏，你说多少就多少</p>
+              <p class="text-grey">打开微信扫一扫，即可进行扫码打赏哦</p>
+            </div>
+          </div>
+          <div class="donate-footer">
+            <ul class="nav nav-tabs nav-justified" role="tablist">
+              <li role="presentation" class="active">
+                <a href="#alipay" id="alipay-tab" role="tab" data-toggle="tab" aria-controls="alipay" aria-expanded="true"><i class="icon icon-alipay"></i> 支付宝</a>
+              </li>
+              <li role="presentation" class="">
+                <a href="#wechatpay" role="tab" id="wechatpay-tab" data-toggle="tab" aria-controls="wechatpay" aria-expanded="false"><i class="icon icon-wepay"></i> 微信支付</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-   
+
+
 </main>
 
   <footer class="footer" itemscope itemtype="http://schema.org/WPFooter">
@@ -559,6 +583,33 @@ window.jQuery || document.write('<script src="js/jquery.min.js"><\/script>')
    
 
 
+
+
+   
+    
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/valine"></script>
+  <script type="text/javascript">
+  var GUEST = ['nick', 'mail', 'link'];
+  var meta = 'nick,mail,link';
+  meta = meta.split(',').filter(function(item) {
+    return GUEST.indexOf(item) > -1;
+  });
+  new Valine({
+    el: '#vcomments',
+    verify: false,
+    notify: false,
+    appId: '',
+    appKey: '',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: meta,
+    pageSize: '10' || 10,
+    visitor: false
+  });
+  </script>
+
+     
 
 
 
