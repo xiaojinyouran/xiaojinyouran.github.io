@@ -26,7 +26,7 @@
 <meta property="og:description" content="为什么要分库分表 当数据量过大时，数据库的存储压力会增大，查询速度也会降低； 当高并发下程序访问数据库时，大量线程同时访问数据会导致数据库访问压力增大；为解决以上问题，就出现了数据库分库分表，将数据存储在多个数据库中，从而降低数据库的存储压力提高查询速度，均衡负载高并发下的数据库访问压力。  分库分表方式垂直拆分垂直拆分是按照一定规则(功能、类型、业务等)将数据库中的表拆到多个数据库中，或将一张宽">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-04-07T01:21:18.000Z">
-<meta property="article:modified_time" content="2020-04-09T01:49:33.690Z">
+<meta property="article:modified_time" content="2020-04-09T01:52:27.500Z">
 <meta property="article:author" content="John Doe">
 <meta property="article:tag" content="数据库">
 <meta name="twitter:card" content="summary">
@@ -396,8 +396,7 @@
 <li>绑定表(ER表)：将关联数据存储到同一数据库，如订单数据和订单详情数据可以将订单详情数据放在相同订单ID的订单数据所存储的数据库。</li>
 <li>系统层数据处理：从不同数据库查询出关联数据，然后通过代码进行组装，但是代码量会增加，使得代码臃肿。</li>
 </ol>
-<p>二、 分页查询</p>
-<p><a href="/2020/04/09/202004090935/" title="水平分库分表下分页查询">水平分库分表下分页查询</a></p>
+<p>二、 分页查询<br>详情请查看<a href="/2020/04/09/202004090935/" title="水平分库分表下分页查询">水平分库分表下分页查询</a></p>
 <p>三、 主键管理</p>
 <ol>
 <li>数据库中添加一张表使用自增规则生成不重复主键，使用锁机制使每次生成一个主键，生成主键之后执行一次主键增加。</li>
